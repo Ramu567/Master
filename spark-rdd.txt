@@ -37,3 +37,14 @@ var names=fr.map(line=>line.split(","))
 names.map(x=>(x(0).toInt,x(1))).sortByKey().foreach(println)//asending order
 names.map(x=>(x(0).toInt,x(1))).sortByKey(false).foreach(println)//desending order
 names.map(x=>(x(0).toInt,x(1))).sortByKey(false). take(3).foreach(println)//desending order
+
+====================================================================
+HI All,
+
+Please go through this link for Spark API with Example.
+
+http://homepage.cs.latrobe.edu.au/zhe/ZhenHeSparkRDDAPIExamples.html
+
+
+
+
