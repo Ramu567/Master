@@ -1,0 +1,510 @@
+Creating Databases:
+==================
+set hive.cli.print.header=true;
+set hive.cli.print.current.db=true;
+
+create database if not exists DEV comment " hold all development tables" location '/user/ramu/';
+create database financial with dbproperties('creator' = 'Ramanjaneyulu P', 'date' = '2016-06-30');
+
+hive> drop table records;
+hive (financia)> drop database if exists financial cascade;
+NOTE: cascade/restrict is optional
+Describe:
+---------
+hive> describe database financial;
+hive> describe database default;
+hive (mydb)> describe database mydb;
+hive (mydb)> describe employees;
+hive (mydb)> describe extended employees;
+hive (mydb)> describe formatted employees;
+Describe specific fields:
+=========================
+describe emplyee.name;
+
+Describe extended:
+------------------
+describe  database extended dev;
+
+describe exteded employee;
+describe formatted employee;
+
+ALTER:
+--------
+hive(financial)> alter database financial set dbproperties('modified by' = 'Ramanjaneyulu P');
+
+---------------------------------------------------------
+creating table from  an existing table with out data only table schama or structure(data is not copied):
+-------------------------------------------------------------------------------
+create table product like mydb.products;
+create external table stocks like mydb.stock2;
+
+load data local inpath 'data/products.txt' overwrite into table product;
+load data local inpath 'data/NYSE_daily' overwrite into table stocks;
+
+copy the data from one tables to anthor table:
+----------------------------------------------
+Hive> insert overwrite table prodct select * from products;
+hive> insert overwrite stcoks select * from stock2;
+
+create table from existing table with data and scama:
+=======================================================
+create table employee123 as select*from employee;
+
+create table:
+------------
+CREATE EXTERNAL TABLE IF NOT EXISTS EMPLOYEE(
+EMPLOYEE_ID INT
+,EMPLOYEE_NAME STRING
+,EMPLOYEE_HIRE_DATE DATE
+,EMPLOYEE_TERMINATION_DATE DATE
+,EMPLOYEE_BILLING_RATE FLOAT)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' STORED AS TEXTFILE LOCATION '/user/employee';
+loading data to table:
+--------------------
+LOAD DATA LOCAL INPATH '/home/cloudera/ramu/employee' into table EMPLOYEE;
+==================================================
+CREATE EXTERNAL TABLE IF NOT EXISTS PROJECT(
+PROJECT_ID INT,
+ PROJECT_NAME STRING,
+ PROJECT_BUDGET FLOAT
+)ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' STORED AS TEXTFILE  LOCATION '/user/project/';
+
+CREATE EXTERNAL TABLE IF NOT EXISTS PROJECT_ORC(
+PROJECT_ID INT,
+ PROJECT_NAME STRING,
+ PROJECT_BUDGET FLOAT
+)STORED AS ORC LOCATION '/user/project_orc/' TBLPROPERTIES('transactional'='true','NO_AUTO_COMPACTION'='true',"orc.compress"="SNAPPY");
+
+LOAD DATA LOCAL INPATH '/home/cloudera/ramu/project' into table PROJECT;
+
+INSERT OVERWRITE TABLE PROJECT_ORC SELECT*FROM PROJECT;
+
+DESCRIBE FORMATTED PROJECT_ORC;
+
+SET hive.support.concurrency=true;
+SET hive.enforce.bucketing=true;
+SET hive.exec.dynamic.partition.mode=nonstrict;
+SET hive.txn.manager=org.apache.hadoop.hive.ql.lockmgr.DbTxnManager;
+SET hive.compactor.initiator.on=true;
+SET hive.compactor.worker.threads=0;
+======================================================================
+CREATE EXTERNAL TABLE IF NOT EXISTS PHOURS(
+PROJECT_ID INT,
+EMPLOYEE_ID INT,
+TIME_LOG_DATE DATE,
+HOURS_LOGGED FLOAT,
+DOLLARS_CHARGED FLOAT)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' STORED AS TEXTFILE LOCATION '/user/phours';
+
+LOAD DATA LOCAL INPATH '/home/cloudera/ramu/phours' into table phours;
+
+create table records (year string, temperature int, quantity int)row format delimited fields terminated by '\t' stored as TEXTFILE;
+
+create table employees(name string,salary float,subordinates array<string>,deductions map<string, float>,address struct<street:string, city:string, state:string, zip:int>);
+
+hive> create table dev.employees_no_partition(
+name string,
+salary float,
+subordinates array<string>,
+deductions map<string, float>,
+address struct<street:string, city:string, state:string, zip:int>)
+row format delimited fields terminated by '\001'
+collection items terminated by '\002'
+map keys terminated by '\003'
+lines terminated by '\n' stored as textfile;
+
+load data local inpath '/data/employees.txt';
+(or)
+overwrite  into table mydb.employees_no_partition;
+
+hive(mydb)> select upper(name),salary,deductions["Federal Taxes"],round(salary*(1-deductions["Federal Taxes"])) from employees_no_partition;
+
+hive(mydb)> select count(*) as count, avg(salary) as salary from employees_no_partition;
+
+==========================================================================
+CREATE EXTERNAL TABLE IF NOT EXISTS TRILS(
+ id INT,
+ name STRING,
+ location STRING,
+ salary FLOAT,
+ hike FLOAT
+)ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' STORED AS TEXTFILE  LOCATION '/ramu/';
+
+1,rahul,Hyderabad,30000,40000
+2,Mohit,Banglore,22000,25000
+3,Rohan,Banglore,33000,40000
+4,Ajay,Bangladesh,40000,45000
+5,srujay,Srilanka,25000,30000
+
+LOAD DATA LOCAL INPATH '/home/cloudera/ramu/trils' into table trils;
+
+===========================================================================
+1) select ASCII('HADOOP')as val FROM TRILS WHERE SALARY=22000;
+
+2) select ASCII('hadoop')as val FROM TRILS WHERE SALARY=22000;
+
+3) select ASCII('Hadoop')as val FROM TRILS WHERE SALARY=22000;
+
+4) select ASCII('H')as val FROM TRILS WHERE SALARY=22000;
+
+5) select ASCII('a')as val FROM TRILS WHERE SALARY=22000;
+
+6) select ASCII('A')as val FROM TRILS WHERE SALARY=22000;
+
+7) select id,name,location,salary ,hike,concat(name,'+',location)as nloc from trils;
+
+8) select id,name,location,salary ,hike, concat(name,'&',location)as nloc from trils;
+
+9) select id,name,location,salary ,hike, concat(name,'+',salary,'+',hike)as nloch from trils;
+
+10) select id,name,location,salary ,hike, concat(name,'=',salary,'+',hike)as nloch from trils;
+
+11) select id,name,location,salary ,hike, concat(name,'=',floor(salary),'+',floor(hike))as nloch from trils;
+
+12) select id,name,location,salary ,hike,substr(location,3) as loc,substring(location,3) as locs from trils;
+
+13) select id,name,location,salary ,hike,substr(location,3,4) as loc,substring(location,3,3) as locs from trils;
+
+14) select id,name,location,salary ,hike, concat(name,' ','Got Hike Of',' ',floor(hike),' ','from',' ',floor(salary))as Gothike from trils;
+
+15) select concat_ws('+',name,location) as nloc from trils;
+    select concat_ws(' ',name,'from',location) as nloc from trils;
+
+Aggrigate functions:
+------------------
+16) select max(salary)as maxsal,min(salary)as minsal,avg(salary)as avgsal,sum(salary)as sumsal,count(*) as total from trils;
+
+17) select max(salary)as maxsal,min(salary)as minsal,avg(salary)as avgsal,sum(salary)as sumsal,count(*) as total from trils group by location;
+
+18) select  sum(salary)as Bangsum, sum(hike)as Banghike from trils where location='Bangalore';
+
+19) select count(*) as total from trils where salary>30000;
+
+20) select count(DISTINCT(location)) as total from trils;
+
+21) select location,count(location) as total from trils group by location;
+
+Variance:
+---------
+22) select variance(salary) as varsal,variance(hike) as varhike from trils;
+
+23) select var_pop(salary) as varsal,var_pop(hike) as varhike from trils;
+
+24) select var_samp(salary) as varsal,var_pop(hike) as varhike from trils;
+
+Standard Deviation:
+-----------------
+23) select stddev_pop(salary) as stdsal,stddev_pop(hike) as stdhike from trils;
+
+24) select stddev_samp(salary) as stdsal,stddev_pop(hike) as stdhike from trils;
+
+Collections:
+------------
+25) select collect_set(salary) as collsal , collect_set(hike) as collhike from trils;
+26) select collect_list(salary) as collsal , collect_list(hike) as collhike from trils;
+
+SPLIT:
+------
+select split('hadoop:hive:pig:hbase:spark:sqoop:oozie:flume:yarn:kafka:storm',':')from trils where salary=22000;
+select split('java is a object oriented programing language',' ')from trils where salary=22000;
+
+format:
+-------
+select format_number(hike,2) from trils where salary=22000;
+select format_number(hike,2) from trils where salary=22000;
+ 
+Case Statement:
+================
+hive> select name, salary,
+case
+when salary <25000 then 'low'
+when salary >=25000 and salary <40000 then 'middle'
+when salary >=40000 then 'high'
+else 'very high'
+end
+as salary_bracket
+from trils;
+ 
+Like and Rlike:
+--------------
+select*from trils where location like 'Ba%';
+
+select*from trils where location Rlike '.*(Ba|Hy).*';
+
+select*from trils where location Rlike '(Banglore|Hyderabad)';
+
+select*from trils where location Rlike '(Ba|Hyderabad)';
+
+Note: period --> any character 
+* --> charactera apprearing immediately left of * can repeat 0 or more times
+ | --> or
+
+Group By:
+------------
+hive (mydb)> select max(price_open) from stocks;
+
+hive (mydb)> select symbol,max(price_open) from stocks;
+
+FAILED: SemanticException [Error 10025]: Line 1:7 Expression not in GROUP BY key 'symbol'
+
+hive (mydb)> select symbol,max(price_open) from stocks GROUP BY symbol limit 5;
+
+hive (mydb)> select symbol,max(price_open) as max from stocks GROUP BY symbol having max > 30 limit 5;
+
+Hive Supports:
+---------------
+1) INNER JOIN
+2) LETF OUTER JOIN
+3) RIGHT OUTER JOIN
+4) FULL OUTER JOIN
+5) LEFT SEMI JOIN (returns records from the left table if recoreds are found in right table that satisfy on predicates. ) 
+6) CORTISIAN PRODUCT JOIN (select*from t1 join t2) 
+7) MAP SIDE JOIN(Small table cached in memory and small table right side of join).
+==> Hive does not support OR between predicates in ON claues (AND is supported).
+-> you join more than two tables.
+
+===================================================================================
+ORDER BY, SORT BY ,DISTRIBUTED BY  and CLUSER BY (SORT BY + DISTRIBUTED BY):
+------------------------------------------------------------------------
+ORDER BY => Total ordering
+SORT BY => Orders data with in each reducer (Local ordering)
+If hive.mapred.mode=strict -->LIMIT needed with order by 
+DISTRIBUTED BY  controls how map output is divided among reducers.
+CLUSER BY => SORT BY+ DISTRIBUTED BY.
+
+ ITEM                ORDERING             #REDUCERS                                               OUTPUT
+---------------------------------------------------------------------------------------------------------------------------
+ORDER BY             Globel ordering      1 reducer(unacceptable for large data sets )           1 sorted file
+---------------------------------------------------------------------------------------------------------------------------
+SORT BY              local to reducer     N Reducers (with overlaping data)                      >= n sorted files
+---------------------------------------------------------------------------------------------------------------------------
+DISTRIBUTED BY       no sorting           N Reducers (Non overlaping data and not sorted)        >= n not sorted files
+----------------------------------------------------------------------------------------------------------------------------
+CLUSER BY            result : globel      N Reducers (Non overlaping data and sorted)            >= n sorted files
+----------------------------------------------------------------------------------------------------------------------------
+
+hive(dev)> select s.ymd, s.symbol, s.price_close from stocks s order by s.ymd asc, s.symbol desc;
+hive(dev)> select s.ymd, s.symbol, s.price_close from stocks s sort by s.ymd asc, s.symbol desc;
+hive(dev)> select s.ymd, s.symbol, s.price_close from stocks s distribute by s.symbol sort by s.symbol asc, s.ymd asc;
+hive(dev)> select s.ymd, s.symbol, s.price_close from stocks s cluster by s.symbol;
+
+SORT BY: (each reducer output is ordered; but total order is missing)
+r1:           0
+0
+3
+9
+r2:           0
+0
+1
+2
+ORDER BY: (single output; fully ordered)
+r:             0
+0
+0
+0
+1
+2
+3
+9
+DISTRIBUTE BY: (same keys go into same reducer; no guarantee to be clusteed in adjacent positions)
+r1:           x1
+x2
+x1
+r2:           x4
+x3
+CLUSTER BY: (global ordering across multiple reducers)
+r1:           x1
+x1
+x2
+r2:           x3
+x4
+
+CAST:
+-----------
+hive (mydb)> select name from employees where cast(salary as int) > 100000;
+hive (mydb)> select name from employees  where cast(salary as float) > 100000.0;
+hive (mydb)> create external table numbers(number int);
+hive (mydb)> load data local  inpath 'data/numbers.txt' into numbers;
+hive (mydb)> describe numbers;
+OK
+col_name              data_type             comment
+
+number int
+
+hive (mydb)> select * from numbers;
+number
+1
+2
+3
+4
+5
+6
+7
+8
+10
+
+TABLESAMPLE- BUCKET
+---------------------
+--> TABLESAMPLE is used to extrat the data from bucket.
+--> tablesample(bucket x out of y on [column_name]);
+--> tablesample(bucket x out of y on rand()) table_alias;
+--> Rows of the table are bucketed on the column name randamly into buckets numbered to 1 y
+--> rows belongs to bucket x returned .
+
+hive (mydb)> select * from numbers TABLESAMPLE(BUCKET 2 OUT OF 5 on rand()) s;
+number
+7
+8
+10
+hive (mydb)> select * from numbers TABLESAMPLE(BUCKET 2 OUT OF 5 on rand()) s;
+OK
+number
+5
+hive> select * from numbers TABLESAMPLE(BUCKET 1 OUT OF 5 on number) s;
+OK
+1
+6
+hive> select * from numbers TABLESAMPLE(BUCKET 1 OUT OF 5 on number) s;
+OK
+1
+6
+hive> select * from numbers TABLESAMPLE(BUCKET 1 OUT OF 5 on number) s;
+OK
+1
+6
+hive> select * from numbers TABLESAMPLE(BUCKET 1 OUT OF 5 on number) s;
+OK
+5
+10
+hive> select * from numbers TABLESAMPLE(BUCKET 1 OUT OF 5 on number) s;
+OK
+5
+10
+
+
+-----------------------------------------------------------------------
+BCLOCK SAMPLING:
+------------------
+TABLESAMPLE(n percent)--> n% of the data size (not n% of rows.)
+
+hive> select * from numbers tablesample(0.1 percent) s;
+OK
+1
+2
+3
+4
+5
+6
+7
+8
+10
+Time taken: 11.612 seconds
+
+Note: smallest unit of smapleing is a single HDFS block. if table size > block size , all rows are returned.
+In percentage sampling ,by using set hive.sample.seednumber=<integer> you can control the subset of data sampled.
+
+INPUT PURNING FOR BUCKET TABLES:
+---------------------------
+Typically , tablesample will scan the entire table.this is not effcient .but if the columns specified in tablesample cluase match the cloumns in cluster by clause,
+tablesample queires only scan the required hash partions of the buckets.
+
+hive> create table numbers_bucketed(number int) clustered by (number) into 3 buckets;
+OK
+Time taken: 0.264 seconds
+ 
+hive> set hive.enforce.bucketing=true;
+ 
+hive> insert table numbers_bucketed select number from numbers;
+FAILED: ParseException line 1:0 cannot recognize input near 'insert' 'table' 'numbers_bucketed' in insert clause
+hive> insert overwrite table numbers_bucketed select number from numbers;
+Total MapReduce CPU Time Spent: 20 seconds 600 msec
+OK
+Time taken: 61.175 seconds
+ 
+hive> select * from numbers_bucketed;
+OK
+3
+6
+1
+4
+7
+10
+2
+5
+8
+Time taken: 0.711 second
+[cloudera@localhost ~]$ hadoop fs -cat /user/hive/warehouse/mydb.db/numbers_bucketed/000000_0;
+3
+6
+[cloudera@localhost ~]$ hadoop fs -cat /user/hive/warehouse/mydb.db/numbers_bucketed/000001_0; 
+1
+4
+7
+10
+[cloudera@localhost ~]$ hadoop fs -cat /user/hive/warehouse/mydb.db/numbers_bucketed/000002_0;
+2
+5
+8
+hive> select * from numbers_bucketed tablesample(bucket 1 out of 3 on number) s;
+OK
+3
+6
+hive> select * from numbers_bucketed tablesample(bucket 2 out of 3 on number) s;
+OK
+1
+4
+7
+10
+hive> select * from numbers_bucketed tablesample(bucket 3 out of 3 on number) s;
+OK
+2
+5
+8
+hive> select * from numbers_bucketed tablesample(bucket 1 out of 4 on number) s;
+OK
+4
+8
+Time taken: 13.708 seconds
+
+UNION ALL(combine two or more tables.):
+=========================================
+--> number and type of cloumns must match.
+
+hive> from (from stocks select stocks.symbol, stocks.price_open where stocks.volume < 100000
+union all
+from stocks select stocks.symbol, stocks.price_open  where stocks.volume <150000)
+unioninput
+insert overwrite directory 'output/union.out' select unioninput.*;
+
+Time taken: 14.794 seconds
+ Note : Above query uses same table for union. same results can be achived by using select * where clause.
+ 
+ VIEWS :
+ -------
+ Materialized views are not support in hive.
+ views can be used reduce the query complexity.
+ 
+hive> select name, size(subordinates)  from employees_no_partition;
+OK
+John Doe               2
+Mary Smith             1
+Todd Jones             0
+Bill King              0
+Boss Man               2
+Fred Finance           1
+Stacy Accountant       0
+ 
+Time taken: 20.045 seconds
+
+create view trail as select * from trils where hike>25000;
+select*from trail;
+describe formatted trail;
+
+creating table from view:
+----------------------------
+create table trails like trail;
+create external table like trail;
+
+Alter view:
+=========
+hive> alter view trail set tblproperties('created_at'='2016-07-01');
