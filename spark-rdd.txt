@@ -31,3 +31,9 @@ val lines = sc.textFile("/spark/trils")
 val lineLengths = lines.map(s => s.length)
 val totalLength = lineLengths.reduce((a, b) => a + b)
 lineLengths.persist()
+=============================================
+Var fr=sc.textFile("/ravi/fruits.txt")
+var names=fr.map(line=>line.split(","))
+names.map(x=>(x(0).toInt,x(1))).sortByKey().foreach(println)//asending order
+names.map(x=>(x(0).toInt,x(1))).sortByKey(false).foreach(println)//desending order
+names.map(x=>(x(0).toInt,x(1))).sortByKey(false). take(3).foreach(println)//desending order
