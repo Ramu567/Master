@@ -1,0 +1,428 @@
+
+When Big Data storages and analyzers such as MapReduce, Hive, HBase, Cassandra, Pig, etc. of
+the Hadoop ecosystem came into picture, they required a tool to interact with the relational
+database servers for importing and exporting the Big Data residing in them. Here, Sqoop occupies
+a place in the Hadoop ecosystem to provide feasible interaction between relational database
+server and Hadoop’s HDFS.
+Sqoop is a tool designed to transfer data between Hadoop and relational database servers. It is
+used to import data from relational databases such as MySQL, Oracle to Hadoop HDFS, and export
+from Hadoop file system to relational databases. It is provided by the Apache Software Foundation
+
+Sqoop Import
+-----------------
+The import tool imports individual tables from RDBMS to HDFS. Each row in a table is treated as a
+record in HDFS. All records are stored as text data in text files or as binary data in Avro and
+Sequence files.
+
+Sqoop Export
+----------------
+The export tool exports a set of files from HDFS back to an RDBMS. The files given as input to
+Sqoop contain records, which are called as rows in table. Those are read and parsed into a set of
+records and delimited with user-specified delimiter.
+
+
+Sqoop: “RDBMS to Hadoop and Hadoop to RDBMS”
+
+list of databases
+----------------------
+bin/sqoop list-databases --connect jdbc:mysql://192.168.40.1/ --username root -P
+
+list of tables
+--------------
+bin/sqoop list-tables --connect jdbc:mysql://192.168.40.1/ramu --username root -P
+
+1)import a table
+--------------
+sqoop import \
+--connect jdbc:mysql://192.168.40.1/ramu \
+--username root \
+--table emp --m 1
+
+sqoop import --connect jdbc:mysql://192.168.40.1/ramu --username root -P --table emp --m 1 
+
+(check in /user/edureka)
+
+2)Importing into Target Directory
+-----------------------------------
+sqoop import \
+--connect jdbc:mysql://192.168.40.1/userdb \
+--username root \
+--table emp --m 1
+--target-dir /sqoop/queryresult
+
+sqoop import --connect jdbc:mysql://192.168.40.1/ramu --username root -P --table emp --m 1 --target-dir /sqoop/emp/
+
+sqoop import --connect jdbc:mysql://192.168.40.1/ramu --username root -P --table employee --direct --target-dir /sqoop/employee
+sqoop import --connect jdbc:mysql://192.168.40.1/ramu --username root -P --table employee 
+
+sqoop import --connect jdbc:mysql://192.168.40.1/ramu --username root -P --table emp143 --direct --target-dir /sqoop/emp143
+
+
+sequence
+-----------
+sqoop import --connect jdbc:mysql://192.168.40.1/ramu --username root -P --table emp143 --class-name com.employee --as-sequencefile
+
+sqoop import --connect jdbc:mysql://192.168.40.1/ramu --username root -P --table recharge --m 1 --target-dir /sqoop/recharge --class-name com.recharge --as-sequencefile
+
+avero
+----------
+sqoop import --connect jdbc:mysql://192.168.40.1/userdb --username root -P --table employee --m 1 --target-dir /sqoop/empavrodata --class-name com.employee --as-avrodatafile
+
+text file
+---------
+sqoop import --connect jdbc:mysql://192.168.40.1/ramu --username root -P --table employee --m 1 --target-dir /sqoop/emptext --class-name com.employee --as-textfile
+
+Tab suparated and new line
+--------------------------
+sqoop import --connect jdbc:mysql://192.168.40.1/ramu --username root -P --table cliaminfo --m 1 --target-dir /sqoop/cliaminfotext --fields-terminated-by '\t' --lines-terminated-by '\n' --optionally-enclosed-by '\"'
+
+3)Import Subset of Table Data
+---------------------------------
+sqoop import \
+--connect jdbc:mysql://192.168.40.1/userdb \
+--username root \
+--table emp_add --m 1
+--where “city =’sec-bad’” \
+--target-dir /wherequery
+
+sqoop import --connect jdbc:mysql://192.168.40.1/userdb --username root -P --table emp_add --m 1 --where "city='sec'" --target-dir /sqoop/wherequery
+sqoop import --connect jdbc:mysql://192.168.40.1/userdb --username root -P --table employee --m 1 --where "salary>'30000'" --target-dir /sqoop/employeewhere
+
+4)Incremental Import
+---------------------
+Incremental import is a technique that imports only the newly added rows in a table. It is required
+to add ‘incremental’, ‘check-column’, and ‘last-value’ options to perform the incremental import.
+--incremental <mode>
+--check-column <column name>
+--last value <last check column value>
+
+sqoop import \
+--connect jdbc:mysql://192.168.40.1/userdb \
+--username root \
+--table emp143 --m 1
+--target-dir /sqoop/emp143
+--incremental append \
+--check-column id \
+--last-value 1205
+
+sqoop import --connect jdbc:mysql://192.168.40.1/ramu --username root -P --table emp143 --m 1 --target-dir /sqoop/emp143 --incremental append --check-column id --last-value 1205
+
+
+Importing only new employees:
+---------------------------------
+sqoop import --connect jdbc:mysql://192.168.40.1/ramu --username root -P --table employee --m 1 --where "start_date > '2015-10-4'"
+
+--split-by
+-----------
+sqoop import --connect jdbc:mysql://192.168.40.1/ramu --username root -P --table emp  --target-dir /sqoop/empsplit --split-by id 
+sqoop import --connect jdbc:mysql://192.168.40.1/ramu --username root -P --table emp --m 1 --target-dir /sqoop/empsplit1 --split-by salary
+
+SQOOP - IMPORT ALL TABLES
+--------------------------
+sqoop import-all-tables \
+--connect jdbc:mysql://192.168.40.1/userdb \
+--username root \
+
+sqoop import-all-tables --connect jdbc:mysql://192.168.40.1/ramu  --username root -P  --m 1 
+
+Note: If you are using the import-all-tables, it is mandatory that every table in that database must
+have a primary key field.
+
+SQOOP - EXPORT
+--------------
+It is mandatory that the table to be exported is created manually and is present in the database
+from where it has to be exported.
+
+sqoop export \
+--connect jdbc:mysql://192.168.40.1/userdb \
+--username root \
+-P
+--table employee \
+--export-dir /emp/emp_data
+
+bin/sqoop export --connect jdbc:mysql://192.168.40.1/userdb --username root -P --table employee --export-dir /sqoop/queryresult
+
+importing data into to hive:
+------------------------------
+=>import table  directly to hive default database 
+sqoop import --connect jdbc:mysql://192.168.40.1/ramu -username root -P --table indvsaus --hive-import --create-hive-table --hive-table indvsaus --hive-home /user/hive/warehouse/ramu.db/
+sqoop import --connect jdbc:mysql://192.168.40.1/ramu -username root -P --table txnrecords --hive-import --create-hive-table --hive-table txnrecords
+sqoop import --connect jdbc:mysql://192.168.40.1/ramu -username root -P --table paymentinfo --hive-import --create-hive-table --hive-table paymentinfo
+sqoop import --connect jdbc:mysql://192.168.40.1/ramu -username root -P --table clientinfo --hive-import --create-hive-table --hive-table clientinfo
+sqoop import --connect jdbc:mysql://192.168.40.1/ramu -username root -P --table cliaminfo --hive-import --create-hive-table --hive-table cliaminfo
+sqoop import --connect jdbc:mysql://192.168.40.1/ramu -username root -P --table healthcare --m 1 --hive-import --create-hive-table --hive-table healthcare
+================================
+sqoop import --connect jdbc:mysql://192.168.40.1/ramu -username root -P --table indvsaus --hive-import --create-hive-table --hive-table indvsaus --hive-home /user/hive/warehouse/ramu.db/
+sqoop import --connect jdbc:mysql://192.168.40.1/ramu -username root -P --table txnrecords --hive-import --create-hive-table --hive-table txnrecords
+sqoop import --connect jdbc:mysql://192.168.40.1/ramu -username root -P --table paymentinfo --hive-import --create-hive-table --hive-table paymentinfo
+sqoop import --connect jdbc:mysql://192.168.40.1/ramu -username root -P --table clientinfo --hive-import --create-hive-table --hive-table clientinfo
+sqoop import --connect jdbc:mysql://192.168.40.1/ramu -username root -P --table cliaminfo --hive-import --create-hive-table --hive-table cliaminfo
+sqoop import --connect jdbc:mysql://192.168.40.1/ramu -username root -P --table healthcare --m 1 --hive-import --create-hive-table --hive-table healthcare
+
+
+==>import table directly to specific hive database 
+sqoop import --connect jdbc:mysql://192.168.40.1/ramu --username root -P --table emp143 --hive-import --create-hive-table --hive-table emp143 --hive-home /user/hive/warehouse/ram.db/
+
+
+Eval function
+----------------
+Describes how to use the Sqoop ‘eval’ tool. It allows users to execute user-defined
+queries against respective database servers and preview the result in the console. So, the user can
+expect the resultant table data to import. Using eval, we can evaluate any type of SQL query that
+can be either DDL or DML statement.
+
+sqoop eval 
+--connect jdbc:mysql://192.168.40.1/userdb 
+--username root 
+-P 
+--query "SELECT * FROM employee LIMIT 3"
+
+sqoop eval --connect jdbc:mysql://192.168.40.1/userdb --username root -P --query "SELECT * FROM employee LIMIT 3"
+sqoop eval --connect jdbc:mysql://192.168.40.1/userdb --username root -P --query "SELECT * FROM employee where salary='50000'"
+
+Insert Query Evaluation
+-----------------
+Sqoop eval tool can be applicable for both modeling and defining the SQL statements. That
+means, we can use eval for insert statements too. The following command is used to insert a new
+row in the employee table of db database.
+
+sqoop eval 
+--connect jdbc:mysql://192.168.40.1/userdb 
+--username root 
+-P 
+-e "INSERT INTO employee VALUES('1207','Raju','UI dev',15000,'tp')"
+
+sqoop eval --connect jdbc:mysql://192.168.40.1/userdb --username root -P -e "INSERT INTO employee VALUES('1207','Raju','UI dev',15000,'tp')"
+
+
+
+
+
+SQOOP - JOB
+--------------
+Describes how to create and maintain the Sqoop jobs. Sqoop job creates and saves
+the import and export commands. It specifies parameters to identify and recall the saved job. This
+re-calling or re-executing is used in the incremental import, which can import the updated rows
+from RDBMS table to HDFS.
+
+Create Job (--create)
+--------------------
+Here we are creating a job with the name myjob, which can import the table data from RDBMS
+table to HDFS. The following command is used to create a job that is importing data from the
+employee table in the db database to the HDFS file.
+
+sqoop 
+job --create myjob \
+--import \
+--connect jdbc:mysql://localhost/db \
+--username root \
+--table employee --m 1
+----target-dir /sqoop/queryresult
+
+bin/sqoop job --create myjob -- import --connect jdbc:mysql://192.168.40.1/userdb --username root -P --table employee --m 1 --target-dir /sqoop/employeequeryresult 
+
+Verify Job (--list)
+---------------------
+sqoop job --list
+
+Available jobs:
+myjob
+
+Execute Job (--exec)
+---------------------
+‘--exec’ option is used to execute a saved job. The following command is used to execute a saved
+job called myjob.
+
+sqoop job --exec myjob
+
+SQOOP - CODEGEN
+----------------
+Describes the importance of ‘codegen’ tool. From the viewpoint of object-oriented 
+application, every database table has one DAO class that contains ‘getter’ and ‘setter’ methods to
+initialize objects. This tool (-codegen) generates the DAO class automatically.
+It generates DAO class in Java, based on the Table Schema structure. The Java definition is
+instantiated as a part of the import process. The main usage of this tool is to check if Java lost the
+Java code. If so, it will create a new version of Java with the default delimiter between fields.
+
+sqoop codegen \
+--connect jdbc:mysql://localhost/userdb \
+--username root \
+--table emp
+
+sqoop codegen --connect jdbc:mysql://localhost/db --username root -P --table emp
+
+cd /tmp/sqoop-hadoop/compile/9a300a1f94899df4a9b10f9935ed9f91/
+$ ls
+emp.class
+emp.jar
+emp.java
+
+===========================================================================================================================================================
+
+
+--List all databases in MySQL
+
+sqoop-list-databases --connect jdbc:mysql://localhost --username hadoop --P
+
+--List all tables in MySQL
+
+sqoop-list-tables --connect jdbc:mysql://localhost/hive --username hadoop --P
+
+--Pass parameter file to Sqoop
+
+sqoop-list-tables --options-file /home/training/Desktop/SqoopPractice/Connection
+
+--Import table data to HDFS (O/P file will be by default delimited text)
+
+ option file (/home/training/f1.txt)
+--------
+--connect
+jdbc:mysql://localhost/ravi
+--username
+hadoop
+--password
+hadoop
+
+
+hadoop fs -rmr /user/training/Employee
+sqoop-import --options-file /home/training/Desktop/SqoopPractice/Connection --table Employee -m 1
+
+--Import table data to HDFS (Import only specific columns)
+
+hadoop fs -rmr /user/training/Employee
+sqoop-import --options-file /home/training/Desktop/SqoopPractice/Connection --table Employee -m 1 --columns "ENo,ESal"
+
+--Import table data to HDFS (Tab separated file format)
+
+hadoop fs -rmr /user/training/Employee
+sqoop-import --options-file /home/training/Desktop/SqoopPractice/Connection --fields-terminated-by '\t' --lines-terminated-by '\n' --table Employee -m 1
+
+--Import table data to HDFS (Save to target directory)
+
+hadoop fs -rmr /user/training/Employee
+
+sqoop-import --options-file /home/training/Desktop/SqoopPractice/Connection --table Employee -m 1 --target-dir /user/Employee
+
+--Import table data to HDFS (Where condition)
+hadoop fs -rmr /user/Employee
+hadoop fs -rmr /user/training/Employee
+
+sqoop-import --options-file /home/training/Desktop/SqoopPractice/Connection --table Employee -m 1  --where "ESal > 50000"
+
+--Import table data to HDFS (Where condition)
+
+hadoop fs -rmr /user/training/Employee
+sqoop-import --options-file /home/training/Desktop/SqoopPractice/Connection --table Employee --split-by EDept
+
+--Import table data to Hive
+ 
+sqoop-import --options-file /home/training/Desktop/SqoopPractice/Connection --table Employee -m 1 --hive-import
+
+
+Arguements:
+--as-sequencefile               Imports data to SequenceFiles
+--as-textfile                   Imports data as plain text (default)
+--direct-split-size <n>         Split the input stream every 'n' bytes when importing in direct mode
+
+--create-hive-table		Fail if the target hive table exists
+--hive-import	 		Import tables into Hive (Uses Hive’s default delimiters if none are set.)
+--hive-overwrite		Overwrite existing data in the Hive table.
+--hive-table <table-name>	Sets the table name to use when importing to Hive.
+--hive-partition-key <partition-key>        Sets the partition key to use when importing to hive
+--hive-partition-value <partition-value>    Sets the partition value to use when importing to hive
+
+import-all-tables: 
+
+This tool imports a set of tables from an RDBMS to HDFS. Data from each table is stored in a separate directory in HDFS.
+
+For the import-all-tables tool to be useful, the following conditions must be met:
+Each table must have a single-column primary key.
+You must intend to import all columns of each table.
+You must not intend to use non-default splitting column, nor impose any conditions via a WHERE clause.
+
+--Export data to MySQL table 
+sqoop export --options-file /home/training/Desktop/SqoopPractice/Connection --table Employee --export-dir /user/training/Empdata
+
+Export Failure Cases:
+Exports may fail for a number of reasons:
+Loss of connectivity from the Hadoop cluster to the database (either due to hardware fault, or server software crashes)
+Attempting to INSERT a row which violates a consistency constraint (for example, inserting a duplicate primary key value)
+Attempting to parse an incomplete or malformed record from the HDFS source data
+Attempting to parse records using incorrect delimiters
+Capacity issues (such as insufficient RAM or disk space)
+
+==================================================================================================================================================
+
+reporting to Tableau software.
+
+1) import table from mysql to HDFS particular floder using Sqoop:
+--------------------------------------------------------------------
+[training@localhost hive]$ sqoop import --connect jdbc:mysql://192.168.0.106/ramu --username root --password system --table emp --target-dir /hive/
+
+2)export table from Hdfs paricular floder to Mysql database using Sqoop:
+-----------------------------------------------------------------------
+1)[training@localhost hive]$ sqoop export --connect jdbc:mysql://192.168.1.4/ramu --username root --password system --table student --export-dir /Ramu/student.csv
+2)[training@localhost hive]$ sqoop export --connect jdbc:mysql://192.168.1.4/ramu --username root --password system --table wordcount --export-dir /output/part-r-00000 --fields-terminated-by '\t'
+
+3) import table from mysql databse to hive (derby database) using sqoop:
+-----------------------------------------------------------------------
+sqoop import --connect jdbc:mysql://192.168.86.1/ramu  --username root --password root  --table student  --hive-table student --hive-import --create-hive-table  --hive-home /user/hive/warehouse/ramu/
+sqoop import --connect jdbc:mysql://192.168.86.1/ramu  --username root --password root --table cliaminfo  --hive-table cliaminfo --m 1 --hive-import --create-hive-table  --hive-home /home/
+sqoop import --connect jdbc:mysql://192.168.86.1/ramu  --username root --password root  --table txnrecords  --hive-table txnrecords --hive-import --create-hive-table  --hive-home /home/training/
+
+4) export result or tables from hive derby database (/user/hive/warehouse/emp1) to mysql particular database  using sqoop:
+ -----------------------------------------------------------------------------------------
+ 2)[training@localhost hive]$ sqoop export --connect jdbc:mysql://192.168.1.4/ramu --username root --password system --table emp1 --export-dir /user/hive/warehouse/emp1/000000_0 --fields-terminated-by '\t'
+  sqoop export --connect jdbc:mysql://192.168.1.9/ravi --username root --password system --table student --export-dir /user/hive/warehouse/student --fields-terminated-by '\001'
+  sqoop export --connect jdbc:mysql://192.168.1.9/ravi --username root --password system --table emp --export-dir /user/hive/warehouse/emp --fields-terminated-by '\001'
+
+5) import all tables from  mysql to HDFS using sqoop:
+--------------------------------------------------
+sqoop import-all-tables --connect jdbc:mysql://192.168.86.1/ramu  --username root -P --hive-import  --hive-home --target-dir /mysql/
+sqoop import-all-tables --connect jdbc:mysql://192.168.86.1/ramu  --username root --password root --hive-import  --hive-home --target-dir /Ramu/ram
+
+6) import all tables from mysql database to hive (derby Database) using sqoop:
+---------------------------------------------------------------------------
+sqoop import-all-tables --connect jdbc:mysql://192.168.86.1/ramu  --username root --password root   --hive-import --create-hive-table  --hive-home /home/training/hive/
+sqoop import-all-tables --connect jdbc:mysql://192.168.1.9/ramu  --username root --password system   --hive-import --create-hive-table  --hive-home /home/training/hive/
+
+ 7)import table from database to hdfs by using --query in sqoop:
+ ---------------------------------------------------------------
+$ sqoop import \
+  --query 'SELECT a.*, b.* FROM a JOIN b on (a.id == b.id) WHERE $CONDITIONS' \
+  --split-by a.id --target-dir /user/foo/joinresults
+                         (or)
+ sqoop import --query 'select a.*,b.* from a join b on(a.id==b.id)where $conditions --split-by a.id --target-dir /Ramu/ram/my'
+ 
+                        (or)
+$ sqoop import \
+  --query "SELECT a.*, b.* FROM a JOIN b on (a.id == b.id) WHERE \$CONDITIONS" \
+  --split-by a.id --target-dir /user/foo/joinresults
+  
+8)  By using Mapper tasks(By default 4 mapper tasks we can increase tasks 8 or 16 like ,Do not increase the degree of parallelism greater than that available within your
+  MapReduce cluster; tasks will run serially and will likely increase the amount of time required to perform the import. Likewise, 
+  do not increase the degree of parallism higher than that which your database can reasonably support. Connecting 100 concurrent clients to your database 
+  may increase the load on the database server to a point where performance suffers as a result.) import data to hdfs:
+  -----------------------------------------------------------------------------------
+  $ sqoop import \
+  --query 'SELECT a.*, b.* FROM a JOIN b on (a.id == b.id) WHERE $CONDITIONS' \
+  -m 8 --target-dir /user/foo/joinresults
+                         (or)
+ sqoop import --query 'select a.*,b.* from a join b on(a.id==b.id)where $conditions -8 --target-dir /Ramu/ram/my'
+ 
+                        (or)
+$ sqoop import \
+  --query "SELECT a.*, b.* FROM a JOIN b on (a.id == b.id) WHERE \$CONDITIONS" \
+  -8 --target-dir /user/foo/joinresults
+9) by using -- columns arqument import partial table from database to hdfs and hive:
+-----------------------------------------------------------------------------
+to hdfs:
+-------
+sqoop import --connect jdbc:mysql://192.168.1.7/ramu  --username root --password system  --table employee --columns "id,ename,salary,job" --target-dir /home/training/hive
+to hive:
+------
+ sqoop import --connect jdbc:mysql://192.168.1.7/ramu  --username root --password system  --table employee --columns "id,ename,salary,job"  --hive-table emp --hive-import --create-hive-table  --hive-home /home/training/hive
+
+10)--delete-target-dir	 (Delete the import target directory if it exists):
+---------------------------------------------------------------------------
+sqoop import --connect jdbc:mysql://192.168.1.7/ramu  --username root --password system  --table employee --delete-target-dir /home/training/hive
