@@ -1,0 +1,33 @@
+word count in spark:
+ --------------------
+ val input = sc.textFile("/spark/project")
+ val count = input.flatMap(line ⇒ line.split(",")).map(word ⇒ (word, 1)).reduceByKey(_ + _) 
+ count.saveAsTextFile("/spark/outfile")
+ =============================================
+ val input1 = sc.textFile("/spark/trils")
+ val count1 = input1.flatMap(line ⇒ line.split(",")).map(word ⇒ (word, 1)).reduceByKey(_ + _) 
+ count1.saveAsTextFile("/spark/outfile1")
+ ---------------------------------------------------
+  val accum = sc.accumulator(0) 
+  sc.parallelize(Array(1, 2, 3, 4)).foreach(x => accum += x)
+  
+ val input1 = sc.textFile("/spark/trils")
+ val count1 = input1.flatMap(line ⇒ line.split(","))
+ count1.count();
+ 
+ ---------------------------
+ 
+ val data = Array(3,6,9,10,22,36,9,89,64,100,23)
+ val distdata = sc.parallelize(data);
+ distdata.count()
+ distdata.mean()
+ distdata.max()
+ distdata.sum()
+ distdata.min()
+ distdata.variance()
+ distdata.stdev()
+ 
+val lines = sc.textFile("/spark/trils")
+val lineLengths = lines.map(s => s.length)
+val totalLength = lineLengths.reduce((a, b) => a + b)
+lineLengths.persist()
